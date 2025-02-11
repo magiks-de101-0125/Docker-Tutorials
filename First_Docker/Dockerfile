@@ -14,9 +14,9 @@ COPY . /app
 # The -y flag automatically confirms the installation prompts
 RUN apt-get update && apt-get install -y python3 python3-pip
 
-# COMMET OUT DULU
+
 # Install icecream package using pip3
-# RUN pip3 install icecream
+RUN pip3 install icecream pandas
 
 # Specify the command to run when the container starts
 # In this case, it's running Python 3 and executing the "app.py" file
