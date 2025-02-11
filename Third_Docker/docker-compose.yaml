@@ -1,0 +1,45 @@
+version: '3.8'  # Docker file format version
+
+services:
+  fastapi:
+    build: .
+    ports:
+      - "8080:8080"  # Expose FastAPI on port 8080
+    volumes:
+      - /workspaces/Docker-Notes/Docker_Compose/FastAPI:/data  # Host directory to store data
+    depends_on:
+      - redis  # Ensure Redis starts before FastAPI
+    environment:
+      - REDIS_HOST=redis  # Set Redis host environment variable
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"  # Limit FastAPI container to use 1 CPU core
+          memory: "512M"  # Limit FastAPI container to 512MB RAM
+    memswap_limit: "1G"  # Set total memory (RAM + swap) to 1GB
+    networks:
+      - custom_network  # Attach FastAPI to the custom network
+    restart: unless-stopped  # Container will restart unless you manually stop it
+
+  redis:
+    image: "redis:alpine"  # Use the official Redis image
+    ports:
+      - "6379:6379"  # Expose Redis on port 6379
+    volumes:
+      - redis-data:/data  # Use Docker volume for Redis data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"  # Limit Redis container to 0.5 CPU cores
+          memory: "256M"  # Limit Redis container to 256MB RAM
+    memswap_limit: "512M"  # Set total memory (RAM + swap) to 512MB
+    networks:
+      - custom_network  # Attach Redis to the custom network
+    restart: unless-stopped
+
+networks:
+  custom_network:
+    driver: bridge  # Use a custom bridge network for internal communication
+
+volumes:
+  redis-data:  # Define Docker-managed volume for Redis data
