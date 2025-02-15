@@ -67,9 +67,47 @@ def pull_raw_data_from_snowflake(**context):
 
             logging.info(f"Dataframe from Snowflake: {df}")
 
+            context["task_instance"].xcom_push(key="sample_data", value=df.to_json())
 
     except Exception as e:
         logging.info(str(e))
+
+
+def send_data_to_snowflake(**context):
+    df_json = context["task_instance"].xcom_pull(task_ids="pull_raw_data_from_snowflake", key="sample_data")
+
+    df = pd.read_json(df_json)
+
+    snowflake_conn = get_snowflake_connection("SNOWFLAKE-CONNECTION-PUSH")
+
+    try:
+        with snowflake.connector.connect(
+            account=snowflake_conn["account"],
+            user=snowflake_conn["user"],
+            password=snowflake_conn["password"],
+            warehouse=snowflake_conn["warehouse"],
+            database=snowflake_conn["database"],
+            schema=snowflake_conn["schema"],
+            role=snowflake_conn["role"]
+        ) as conn:
+
+            success, nchunks, nrows, _ = write_pandas(
+                conn,
+                df,
+                "SAMPLED_CUSTOMERS",
+                auto_create_table=True,
+                overwrite=False
+            )
+
+            if success:
+                logging.info(f"Successfullly uploaded {nrows} in {nchunks} chunks to SAMPLED_CUSTOMERS in Snowflake")
+            else:
+                logging.info("FAILED")
+
+
+    except Exception as e:
+        logging.info(str(e))
+
 
 
 # Define the DAG
@@ -88,5 +126,10 @@ with DAG(
         python_callable=pull_raw_data_from_snowflake
     )
 
+    send_data_to_snowflake = PythonOperator(
+        task_id="send_data_to_snowflake",
+        python_callable=send_data_to_snowflake
+    )
 
-    pull_raw_data_task
+
+    pull_raw_data_task >> send_data_to_snowflake
