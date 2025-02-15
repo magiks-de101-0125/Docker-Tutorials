@@ -15,8 +15,10 @@ default_args = {
 }
 
 
+
 # Function to generate a random number and push it to XCom
 def generate_number(**kwargs):
+    # Randomly generate a number here
     random_number = random.randint(1, 100)
     logging.info(f"Generated number: {random_number}")
     kwargs['task_instance'].xcom_push(key='generated_value', value=random_number)  # Key changed
@@ -71,4 +73,4 @@ with DAG(
     )
 
     # Define task dependencies
-    task_1 >> task_2 >> task_3
+    task_3 >> task_2 >> task_1

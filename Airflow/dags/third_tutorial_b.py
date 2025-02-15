@@ -18,9 +18,11 @@ default_args = {
 def start_execution():
     logging.info("Starting DAG Execution...")
 
+
 # Function to decide which branch to take (both paths will execute)
 def decide_branch():
     return ["task_a1", "task_b1"]  # Both branches execute
+
 
 # Function to simulate failure (50% chance)
 def task_a1():
@@ -104,4 +106,4 @@ with DAG(
     branch_task >> [task_a1_op, task_b1_op]
     task_a1_op >> task_a2_op
     task_b1_op >> task_b2_op
-    [task_a2_op, task_b2_op] >> final_task_op  # Both must succeed before final_task runs
+    [task_a2_op] >> final_task_op  # Both must succeed before final_task runs
